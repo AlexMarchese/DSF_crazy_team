@@ -58,6 +58,7 @@ m1$r.squared
 # The MSE is too high?
 
 caret::MAE(m1$predictions, M_train$order)
+caret::RMSE(m12$predictions, M_train$order)
 
 #manually is the same
 mean(abs(M_train$order - m1$predictions))
@@ -119,7 +120,7 @@ for(i in seq_along(OOB_RMSE)) {
 }
 
 hist(OOB_RMSE, breaks = 20)
-#Testing the model is also useless as the model is anyway useless.
+#Testing part.
 
 "
 
