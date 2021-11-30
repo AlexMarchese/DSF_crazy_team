@@ -11,36 +11,51 @@ library(caret)
 M = read.delim("e-shop clothing 2008.csv",sep = ";")
 
 
+M$date = paste0(M$year,"0",M$month,M$day)
+M$date = as.Date(M$date, tryFormats = "%Y%m%d")
+
+
 M = M %>%
-  select(-year)
+  select(-year,-month,-day)
 
+hist(M$order)
 
+M = M %>%
+  filter(order>10) %>%
+  filter(order< 38)
 
+#Less then 10 clicks is not relevant for our analysis
+#Using the boxplot to exclude the extreme value (over 38)
+ggplot()+geom_boxplot(aes(M$order))
 
 M_split <- initial_split(M, prop = .7)
 M_train <- training(M_split)
 M_test  <- testing(M_split)
 
-#my basic random forest, I also tried with more trees but there is no big difference.
+#my basic random forest
 
 m1 <- ranger(
   formula = order ~ .,
   data    = M_train,
-  num.trees = 500,
-  mtry = 12,
+  num.trees = 800,
+  mtry = 4,
   importance = "impurity",
   min.node.size = 5,
   sample.fraction = 0.8
 )
 
 
-#Both means are almost the same around 9.8
+#Both means are almost the same around 18
 
 mean(M_train$order)
 
 mean(m1$predictions)
 
-# The MSE is far to high
+m1$r.squared
+?ranger
+
+
+# The MSE is too high?
 
 caret::MAE(m1$predictions, M_train$order)
 
@@ -48,8 +63,8 @@ caret::MAE(m1$predictions, M_train$order)
 mean(abs(M_train$order - m1$predictions))
 
 
-#Both gives 7 which compare to the mean is extremely high
-#Increase mtry increase the result but it id still very high (5)
+#Both gives 5.17 which compare to the mean is extremely high
+#Increase mtry increase the result but it id still very high
 
 
 #With so bad results it makes no sense to make an optimisation of the forest
@@ -62,8 +77,48 @@ Matrixforloop <- expand.grid(
   sampe_size = c(.55, .632, .70, .80),
   OOB_RMSE   = 0 
 )
+for(i in 1:nrow(Matrixforloop)) {
+  
+  m12 <- ranger(
+    formula         = order ~ ., 
+    data            = M_train, 
+    num.trees       = 800,
+    mtry            = Matrixforloop$mtry[i],
+    min.node.size   = Matrixforloop$node_size[i],
+    sample.fraction = Matrixforloop$sampe_size[i],
+    seed            = 123
+  )
+  
+  Matrixforloop$OOB_RMSE[i] <- sqrt(m12$prediction.error)
+}
+
+Matrixforloop %>% 
+  dplyr::arrange(OOB_RMSE) %>%
+  head(10)
 
 
+OOB_RMSE <- vector(mode = "numeric", length = 100)
+
+#take a while
+
+for(i in seq_along(OOB_RMSE)) {
+  
+  optimal_ranger <- ranger(
+    formula         = order ~ ., 
+    data            = M_train, 
+    num.trees       = 800,
+    mtry            = 10,
+    min.node.size   = 7,
+    sample.fraction = .8,
+    importance      = 'impurity'
+  )
+  
+  OOB_RMSE[i] <- sqrt(optimal_ranger$prediction.error)
+  
+  print(i)
+}
+
+hist(OOB_RMSE, breaks = 20)
 #Testing the model is also useless as the model is anyway useless.
 
 "
@@ -159,6 +214,7 @@ M3$evaluation_log
 library(prophet)
 
 #Converting day month year into date 
+M = read.delim("e-shop clothing 2008.csv",sep = ";")
 
 M$date = paste0(M$year,"0",M$month,M$day)
 M$date = as.Date(M$date, tryFormats = "%Y%m%d")
