@@ -21,7 +21,12 @@ mode <- function(codes){
   which.max(tabulate(codes))
 }
   
+#Based on historiogram and boxplot we remove the extreme value
+hist(data$order)
+ggplot()+geom_boxplot(aes(data$order))
 
+data = data %>%
+  filter(order< 38)
 
 
 table(data$colour)
