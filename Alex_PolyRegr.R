@@ -1,5 +1,7 @@
 
-library(readr)\
+library(readr)
+
+rm(list = ls())
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
@@ -19,6 +21,7 @@ mode <- function(codes){
   which.max(tabulate(codes))
 }
   
+
 
 
 table(data$colour)
@@ -116,5 +119,9 @@ data<-middle
 
 names(data)
 
-data_n <- aggregate(. ~ `session ID`, data, FUN = mean)
+data_n <- aggregate(. ~ `session ID`, data, FUN = mode)
 
+
+
+
+write.csv(data_n, "clean DF.csv")
