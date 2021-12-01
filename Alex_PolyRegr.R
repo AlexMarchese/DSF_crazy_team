@@ -110,3 +110,7 @@ middle<-left_join(middle,data_page1)
 middle<-left_join(middle,data_price)
 
 data<-middle
+
+colnames(data)[5] <- "Number_of_clicks"
+
+ggplot(data, aes(x= Page_max, y = Number_of_clicks))+geom_line()
