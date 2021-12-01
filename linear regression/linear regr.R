@@ -7,7 +7,7 @@ DS <- read.csv("clean DF.csv")
 
 DS_cl <- DS %>% select(-c(X, session.ID, Page_mean, mode_page1)) %>% rename(`page visits` = order)
 
-
+DS <- DS %>% mutate()
 
 
 # logistic regression
