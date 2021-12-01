@@ -1,7 +1,7 @@
 # test if it works
 
-print('Hey guys')
-a<-c(1,2,3)
+rm(list = ls())
 
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) 
 
-print('That is an update')
+load("NN_output.RData")
