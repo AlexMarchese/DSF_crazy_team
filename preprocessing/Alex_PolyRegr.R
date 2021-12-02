@@ -15,7 +15,7 @@ library(dplyr)
 summary(data)
 
 
-  
+
 
 
 table(data$colour)
@@ -68,8 +68,8 @@ data_country<-data_country%>%
 data_country %<>% select(-c(3))
 
 data_model<-aggregate(data_model,
-                by = list(data_model$`session ID`),
-                FUN = mean)
+                      by = list(data_model$`session ID`),
+                      FUN = mean)
 data_model %<>% select(-c(1))
 
 data_model %<>% mutate(data_model,ifelse(data_model$`model photography` < 1.5, 1, 2))
@@ -84,22 +84,23 @@ data_col <- data_col %>%
   summarise(colour = mode(colour))
 
 data_page_max<-aggregate(data_page,
-                      by = list(data_page$`session ID`),
-                      FUN = max)
+                         by = list(data_page$`session ID`),
+                         FUN = max)
 
 data_page_max %<>% select(-c(1))
 
 data_page_mean<-aggregate(data_page,
-                         by = list(data_page$`session ID`),
-                         FUN = mean)
+                          by = list(data_page$`session ID`),
+                          FUN = mean)
 
 data_page_mean %<>% select(-c(1))
 
 rm(data_page)
 
 data_order<-aggregate(data_order,
-                         by = list(data_order$`session ID`),
-                         FUN = max)
+                      by = list(data_order$`session ID`),
+                      FUN = max)
+
 data_order %<>% select(-c(1))
 
 data_page1 <- data_page1 %>%
@@ -125,15 +126,17 @@ colnames(data)[4]<-'model_position'
 
 
 library(ggplot2)
+
 ggplot(data, aes(y= price, x= colour, col= colour))+geom_point()
 
-ggplot(data_mid, aes(x= price_mean, y= country, col= country)) + geom_point() + scale_y_continuous(
-  breaks = seq(1,47, by= 1)
-)
 
 ggplot(data, aes(x=model_position, y= price))+geom_point()
 
+###############
 
+#The next graphs show us how the mean and the mode differ from each other.
+#But the core point is to see how the price of 40.5-45.5 is the price in which the greatest number of firms
+#see themself. 
 
 data_mid <- data
 
@@ -145,16 +148,23 @@ data_mid<-data_mid%>%
 
 data_mid_2 <- data
 data_mid_2<-aggregate(data_mid_2,
-                          by = list(data_mid_2$country),
-                          FUN = mean)
+                      by = list(data_mid_2$country),
+                      FUN = mean)
 
 data_mid_2%<>% select(-c(1))
 
 data_mid['price_mean']<-data_mid_2[,c(10)]
 
+ggplot(data_mid) + geom_point(aes(x= price_mean, y= country), col = 'blue') + scale_y_continuous(
+  breaks = seq(1,47, by= 5)) + geom_point(aes(x=price_mode, y= country), col= 'red') + scale_x_continuous(
+    breaks = seq(min(data_mid$price_mean),max(data_mid$price_mean), by=10)) + xlab('Price') + ylab('Countries')
+
+##############
+
 
 #case of 25<price<70
-#skip for all the prices
+#skip to take in account all the prices
+
 data<-data%>%
   filter(data$price>=25 & data$price <=75)
 
@@ -231,7 +241,7 @@ ggplot(Dtrain) +
   geom_point(aes(x=colour, y= price), col = 'red', size = 0.8) +
   scale_x_continuous(breaks = seq(1, 14, by = 1)) +
   scale_y_continuous(breaks = seq(20, 80,by= 10))
-  
+
 
 
 # Validation/testing
