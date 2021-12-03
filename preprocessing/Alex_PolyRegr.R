@@ -1,8 +1,15 @@
 rm(list=ls())
 
-library(readr)
-data <- read_delim("e-shop clothing 2008.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+rm(list = ls())
 
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+
+data <- read.csv("../Data/dataset.csv", encoding="UTF-8")
+
+# data <- read_delim("../Data/dataset.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+library(readr)
 library(tidyr)
 library(tidyverse)
 library(magrittr)
@@ -48,7 +55,7 @@ mode(data$price)
 #order valore max
 
 data<-data %>%
-  group_by(`session ID`)%>%
+  group_by(`session.ID`)%>%
   select(-c(1,2,3))
 
 data_1<-data[,c(1,2,3,4,6,8,9,11)]
