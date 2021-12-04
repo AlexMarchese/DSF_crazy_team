@@ -103,3 +103,51 @@ falNeg_predAll50 =
   length(which(D$Label == 1 & D$predAll50 == 0))/
   length(which(D$Label == 1))
 
+
+
+
+
+
+
+DS_rearranged <- read.csv("../Data/rearranged_DS.csv")
+
+DS_rearranged <- DS_rearranged %>% select(-X) 
+
+
+
+median(DS_rearranged$count)
+
+DS_rearranged <- DS_rearranged %>% mutate(Label = ifelse(count >= 826, 1, 0))
+DS_rearranged <-DS_rearranged %>% select(-count)
+
+# lapply(DS_cl, class)
+# 
+# summary(DS_cl)
+# str(DS_cl)
+# dim(DS_cl)
+
+# logistic regression
+
+# DS_conv = as_tibble(model.matrix(~ ., data = DS_cl)) %>% 
+#   select(-"(Intercept)")
+
+modelAll = glm(Label ~ ., family = "binomial", data = DS_rearranged)
+predict(modelAll, type = "response")
+
+D = DS_rearranged %>% 
+  mutate(probAll = predict(modelAll, type = "response")) %>%
+  mutate(predAll50 = ifelse(probAll >=0.5, 1, 0))
+
+
+
+misClas_predAll50 = mean(D$predAll50 != D$Label)
+
+falPos_predAll50 = 
+  length(which(D$Label == 0 & D$predAll50 == 1))/
+  length(which(D$Label == 0))
+
+
+falNeg_predAll50 = 
+  length(which(D$Label == 1 & D$predAll50 == 0))/
+  length(which(D$Label == 1))
+
