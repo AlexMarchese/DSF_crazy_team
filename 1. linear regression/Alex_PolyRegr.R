@@ -1,7 +1,7 @@
 rm(list=ls())
 
 library(readr)
-data <- read_delim("e-shop clothing 2008.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+data <- read_delim("../Data/dataset.csv")
 
 library(tidyr)
 library(tidyverse)
@@ -43,7 +43,7 @@ mode(data$price)
 #Ragruppare clienti per colore, in caso in cui il cliente (i) ha tutti colori diversi, assegnavo un valore uguale a 0
 #prezzo = media dei prezzi visti
 #teniamo la nazione
-#model photography  & price 2  & page 1 & page 2 teniamo il valore più frequente e nel caso la frequenza et zero il valore sara 0
+#model photography  & price 2  & page 1 & page 2 teniamo il valore pi? frequente e nel caso la frequenza et zero il valore sara 0
 #page tenre il valore piu alto e il piu frequente
 #order valore max
 
