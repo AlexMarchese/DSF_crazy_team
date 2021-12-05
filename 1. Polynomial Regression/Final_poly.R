@@ -338,7 +338,3 @@ ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() +
     min(data_log$price), max(data_log$price),10)) + 
   xlab('Type of Product ~ Train Dataset ~ Log') + ylab('Prices') + 
   stat_smooth(method = 'auto', formula = y ~ log(x), size= 1.5, col='red')
-
-
-############
-
