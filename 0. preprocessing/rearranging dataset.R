@@ -21,7 +21,7 @@ DS_unique$count <- 0
 
 
 for (row in 0:nrow(DS_unique)) {
-  
+  row <- 1
 
   category<- DS_unique$category[row]
   colour<- DS_unique$colour[row]

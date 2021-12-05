@@ -90,7 +90,7 @@ med_2_dive_in <- median(DS_aggr_dive_in$visits)
 
 hist(DS_aggr_dive_in$visits, xlab = "visits per customer", main = "frequency of visits per customer")
 
-# taking out the outliers can be quite interesting, to see how the three metric change. Let us keep all values <= 15
+# taking out the outliers can be quite interesting, to see how the three metrics change. Let us keep all values <= 15
 
 
 
