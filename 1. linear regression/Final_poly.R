@@ -1,6 +1,7 @@
 rm(list=ls())
 
 library(readr)
+
 data <- read_delim("e-shop clothing 2008.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 
 library(tidyr)
@@ -15,10 +16,17 @@ library(corrplot)
 library(RColorBrewer)
 library(tidyverse)
 library(caret)
+library(ggplot2)
 
 summary(data)
 
-##Data cleaning
+
+
+data_log <- data[,c(5,7,9, 12)]
+
+colnames(data_log)[2]<-'type'
+
+#Data cleaning
 
 data<-data %>%
   group_by(`session ID`)%>%
@@ -97,16 +105,15 @@ rm(middle)
 colnames(data)[6] <- "Number_of_clicks"
 colnames(data)[4]<-'model_position'
 
-
+rm(data_price,data_page1,data_col,data_country,data_model, data_order, data_page_max, data_page_mean)
 
 #Some data visualization
 
-library(ggplot2)
 
 ggplot(data, aes(y= price, x= colour, col= colour))+geom_point() + 
   scale_color_gradient(low="blue", high="yellow") + 
   scale_x_continuous(breaks = seq(1,14,by=1)) + 
-  xlab('Prices') + ylab('Colour')
+  xlab('Colours') + ylab('Price')
 
 
 
@@ -146,64 +153,89 @@ ggplot(data_mid) + geom_point(aes(x= price_mean, y= country), col = 'blue') + sc
 
 ##Correlation plot
 
+data_cor<-data[,-c(1,5)]
 
-data_cor<-cor(data)
-
-corrplot(data_cor, type="upper", order="hclust",
-         col=brewer.pal(n=8, name="RdYlBu"))
+data_corPer<-cor(data_cor, method = c("pearson"))
 
 
-install.packages("PerformanceAnalytics")
-library("PerformanceAnalytics")
+corrplot(data_corPer, method= c('number'), type="full", order="hclust",
+         col=brewer.pal(n=4, name="RdYlBu"))
 
-chart.Correlation(data_cor, histogram=TRUE, pch=19)
+data_cor_1<-data_1[,-c(1,3)]
+colnames(data_cor_1)[2]<-'type_prod'
+data_cor_1<-cor(data_cor_1, method = c("pearson"))
+
+corrplot(data_cor_1, method= c('pie'), type="full", order="hclust",
+         col=brewer.pal(n=4, name="RdYlBu"))
+
+
+
+data_log_cor<-cor(data_log, method = c("pearson"))
+
+corrplot(data_log_cor, method= c('pie'), type="full", order="hclust",
+         col=brewer.pal(n=4, name="RdYlBu"))
+
+
+##This takes too long and it's more complicated
+#install.packages("PerformanceAnalytics")
+#library("PerformanceAnalytics")
+
+#chart.Correlation(data_corPer, histogram=TRUE, pch=19)
 
 #################
 ##polynomial regression
 
 # Split the data into training and test set
+
+
 set.seed(123)
-training.samples <- Boston$medv %>%
-  createDataPartition(p = 0.8, list = FALSE)
-train.data  <- Boston[training.samples, ]
-test.data <- Boston[-training.samples, ]
+training.samples <- data_log$price %>%
+  createDataPartition(p = 0.9, list= FALSE)
+train.data  <- data_log[training.samples, ]
+test.data <- data_log[-training.samples, ]
 
-ggplot(train.data, aes(lstat, medv) ) +
-  geom_point() +
-  stat_smooth()
+ggplot(train.data, aes(type, price) ) +
+  geom_point()
 
-# Build the model
-model <- lm(medv ~ lstat, data = train.data)
-# Make predictions
-predictions <- model %>% predict(test.data)
-# Model performance
+
+model_PT <- lm(price ~ type, data = train.data)
+
+predictions <- model_PT %>% predict(test.data)
+
 data.frame(
-  RMSE = RMSE(predictions, test.data$medv),
-  R2 = R2(predictions, test.data$medv)
+  RMSE = RMSE(predictions, test.data$price),
+  R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(lstat, medv) ) +
+ggplot(train.data, aes(type, price) ) +
   geom_point() +
   stat_smooth(method = lm, formula = y ~ x)
 
-lm(medv ~ lstat + I(lstat^2), data = train.data)
-
-lm(medv ~ poly(lstat, 2, raw = TRUE), data = train.data)
-
-lm(medv ~ poly(lstat, 6, raw = TRUE), data = train.data) %>%
+lm_linear<-lm(price ~ type + I(type^2), data = train.data) %>%
   summary()
 
+lm_2<-lm(price ~ poly(type, 2, raw = TRUE), data = train.data) %>%
+  summary()
+
+lm_model_final<-lm(price ~ poly(type, 10, raw = TRUE), data = train.data)
+summary(lm_model)
+
+plot <- ggplot(data_log) + geom_point(aes(x=type, y= price, col = price))
+
+pred <- predict(lm_model, newdata = test.data, interval="prediction") 
+head(pred)
+
 # Build the model
-model <- lm(medv ~ poly(lstat, 5, raw = TRUE), data = train.data)
+model <- lm(price ~ poly(type, 5, raw = TRUE), data = train.data)
 # Make predictions
 predictions <- model %>% predict(test.data)
 # Model performance
 data.frame(
-  RMSE = RMSE(predictions, test.data$medv),
-  R2 = R2(predictions, test.data$medv)
+  RMSE = RMSE(predictions, test.data$price),
+  R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(lstat, medv) ) +
+ggplot(train.data, aes(type, price) ) +
   geom_point() +
   stat_smooth(method = lm, formula = y ~ poly(x, 5, raw = TRUE))
 
@@ -213,16 +245,16 @@ ggplot(train.data, aes(lstat, medv) ) +
 #Log transformation
 
   # Build the model
-  model <- lm(medv ~ log(lstat), data = train.data)
+  model <- lm(price ~ log(type), data = train.data)
 # Make predictions
 predictions <- model %>% predict(test.data)
 # Model performance
 data.frame(
-  RMSE = RMSE(predictions, test.data$medv),
-  R2 = R2(predictions, test.data$medv)
+  RMSE = RMSE(predictions, test.data$price),
+  R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(lstat, medv) ) +
+ggplot(train.data, aes(type, price) ) +
   geom_point() +
   stat_smooth(method = lm, formula = y ~ log(x))
 
