@@ -112,14 +112,19 @@ rm(data_price,data_page1,data_col,data_country,data_model, data_order, data_page
 
 ggplot(data, aes(y= price, x= colour, col= colour))+geom_point() + 
   scale_color_gradient(low="blue", high="yellow") + 
-  scale_x_continuous(breaks = seq(1,14,by=1)) + 
-  xlab('Colours') + ylab('Price')
+  scale_x_continuous(breaks = seq(1,14,by=1)) + scale_y_continuous(breaks = 
+                                                                     seq(
+                                                                       min(data$price),
+                                                                       max(data$price),
+                                                                       by=5
+                                                                     )) +
+  xlab('Colours') + ylab('Price') + stat_smooth(method = lm, formula = y ~ x, col='green')
 
 
 
-ggplot(data, aes(x=model_position, y= price, col= price))+geom_point() + 
+ggplot(data, aes(x=model_position, y= price, col= price)) + geom_point() + 
   scale_color_gradient(low="green", high="red") + 
-  xlab('Model_Position') + ylab('Prices')
+  xlab('Model_Position') + ylab('Prices') + stat_smooth(method = lm, formula = y ~ x, col='blue')
 
 ###############
 
@@ -145,35 +150,41 @@ data_mid_2%<>% select(-c(1))
 data_mid['price_mean']<-data_mid_2[,c(10)]
 
 ggplot(data_mid) + geom_point(aes(x= price_mean, y= country), col = 'blue') + scale_y_continuous(
-  breaks = seq(1,47, by= 1)) + geom_point(aes(x=price_mode, y= country), col= 'red') + scale_x_continuous(
-    breaks = seq(min(data_mid$price_mean),max(data_mid$price_mean), by=5)) + 
+  breaks = seq(1,47,2)) + geom_point(aes(x=price_mode, y= country), col= 'red') + scale_x_continuous(
+    breaks = seq(min(data_mid$price_mean),max(data_mid$price_mean), 5)) + 
   xlab('Prices: Mean-Blue VS. Mode-Red') + ylab('Countries')
 
 ##############
 
 ##Correlation plot
 
-data_cor<-data[,-c(1,5)]
+#data_clean
 
-data_corPer<-cor(data_cor, method = c("pearson"))
+data_clean_cor<-data[,-c(1,5)]
+
+data_clean_cor<-cor(data_clean_cor, method = c("pearson"))
 
 
-corrplot(data_corPer, method= c('number'), type="full", order="hclust",
-         col=brewer.pal(n=4, name="RdYlBu"))
-
-data_cor_1<-data_1[,-c(1,3)]
-colnames(data_cor_1)[2]<-'type_prod'
-data_cor_1<-cor(data_cor_1, method = c("pearson"))
-
-corrplot(data_cor_1, method= c('pie'), type="full", order="hclust",
-         col=brewer.pal(n=4, name="RdYlBu"))
+corrplot(data_clean_cor, method= c('number'), type="full", order="hclust",
+         col=brewer.pal(n=4, name="RdYlBu") , tl.srt = 90, tl.col = 'black', tl.pos = 'l')
 
 
 
-data_log_cor<-cor(data_log, method = c("pearson"))
+colnames(data_1)[4]<-'type'
+colnames(data_1)[6]<-'model'
+
+
+data_cor_full<-data_1[,-c(1,3)]
+data_cor_full<-cor(data_cor_full, method = c("pearson"))
+
+corrplot(data_cor_full, method= c('number'), type="full", order="hclust",
+         col=brewer.pal(n=4, name="RdYlBu") , tl.srt = 30, tl.col = 'black')
+
+
+
 
 corrplot(data_log_cor, method= c('pie'), type="full", order="hclust",
-         col=brewer.pal(n=4, name="RdYlBu"))
+         col = brewer.pal(n=4, name="RdYlBu"), tl.srt = 90, tl.col = 'black', tl.pos = 'd')
 
 
 ##This takes too long and it's more complicated
@@ -187,6 +198,10 @@ corrplot(data_log_cor, method= c('pie'), type="full", order="hclust",
 
 # Split the data into training and test set
 
+ggplot(data_log, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product') + ylab('Prices') + stat_smooth(method = lm , formula = y ~ x, col='red', size=1.5)
 
 set.seed(123)
 training.samples <- data_log$price %>%
@@ -194,13 +209,31 @@ training.samples <- data_log$price %>%
 train.data  <- data_log[training.samples, ]
 test.data <- data_log[-training.samples, ]
 
-ggplot(train.data, aes(type, price) ) +
-  geom_point()
+
+ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product ~ Train Dataset') + ylab('Prices') + stat_smooth(method = 'auto', formula = y ~ x, col='red', size=1.5)
 
 
-model_PT <- lm(price ~ type, data = train.data)
+model_linPT <- lm(price ~ type, data = train.data)
 
-predictions <- model_PT %>% predict(test.data)
+predictions <- model_linPT %>% predict(test.data)
+
+data.frame(
+  RMSE = RMSE(predictions, test.data$price),
+  R2 = R2(predictions, test.data$price)
+)
+
+
+
+
+
+
+lm_2<-lm(price ~ poly(type, 2, raw = TRUE), data = train.data)
+summary(lm_2)
+
+predictions <- lm_2 %>% predict(test.data)
 
 data.frame(
   RMSE = RMSE(predictions, test.data$price),
@@ -209,27 +242,17 @@ data.frame(
 
 ggplot(train.data, aes(type, price) ) +
   geom_point() +
-  stat_smooth(method = lm, formula = y ~ x)
+  stat_smooth(method = 'auto', formula = y ~ poly(x, 2, raw = TRUE))
 
-lm_linear<-lm(price ~ type + I(type^2), data = train.data) %>%
-  summary()
 
-lm_2<-lm(price ~ poly(type, 2, raw = TRUE), data = train.data) %>%
-  summary()
 
 lm_model_final<-lm(price ~ poly(type, 10, raw = TRUE), data = train.data)
-summary(lm_model)
+summary(lm_model_final)
 
-plot <- ggplot(data_log) + geom_point(aes(x=type, y= price, col = price))
 
-pred <- predict(lm_model, newdata = test.data, interval="prediction") 
-head(pred)
+predictions <- lm_model_final %>% predict(test.data)
 
-# Build the model
-model <- lm(price ~ poly(type, 5, raw = TRUE), data = train.data)
-# Make predictions
-predictions <- model %>% predict(test.data)
-# Model performance
+
 data.frame(
   RMSE = RMSE(predictions, test.data$price),
   R2 = R2(predictions, test.data$price)
@@ -237,7 +260,11 @@ data.frame(
 
 ggplot(train.data, aes(type, price) ) +
   geom_point() +
-  stat_smooth(method = lm, formula = y ~ poly(x, 5, raw = TRUE))
+  stat_smooth(method = 'auto', formula = y ~ poly(x, 10, raw = TRUE))
+
+
+pred_model <- predict(lm_model_final, newdata = test.data, interval="prediction") 
+head(pred_model)
 
 ##############
 ##############
@@ -259,4 +286,9 @@ ggplot(train.data, aes(type, price) ) +
   stat_smooth(method = lm, formula = y ~ log(x))
 
 ############
+
+
+###########
+#Same research as before, but removing Type of Product = 4, i.e. removing the Sales.
+
 
