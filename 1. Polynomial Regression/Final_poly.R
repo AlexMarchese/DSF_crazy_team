@@ -2,7 +2,8 @@ rm(list=ls())
 
 library(readr)
 
-data <- read_delim("e-shop clothing 2008.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+data <- read_delim("1. Polynomial Regression/e-shop clothing 2008.csv", delim = ';')
+
 
 library(tidyr)
 library(tidyverse)
@@ -20,17 +21,21 @@ library(ggplot2)
 
 summary(data)
 
+#Data cleaning and handling
 
+#Create a data set that have country, price, type of prod., and color
 
-data_log <- data[,c(5,7,9, 12)]
+data_log <- data[,c(5,7,9,12)]
 
 colnames(data_log)[2]<-'type'
 
-#Data cleaning
+#Remove the not useful columns
 
 data<-data %>%
   group_by(`session ID`)%>%
   select(-c(1,2,3))
+
+#Main process of cleaning and handling
 
 data_1<-data[,c(1,2,3,4,6,8,9,11)]
 data_order<-data_1[,c(1,3)]
@@ -107,8 +112,10 @@ colnames(data)[4]<-'model_position'
 
 rm(data_price,data_page1,data_col,data_country,data_model, data_order, data_page_max, data_page_mean)
 
-#Some data visualization
+colnames(data_1)[4]<-'type'
+colnames(data_1)[6]<-'model'
 
+#Some data visualization to have a better idea of how the features correlate
 
 ggplot(data, aes(y= price, x= colour, col= colour))+geom_point() + 
   scale_color_gradient(low="blue", high="yellow") + 
@@ -129,8 +136,9 @@ ggplot(data, aes(x=model_position, y= price, col= price)) + geom_point() +
 ###############
 
 #The next graphs show us how the mean and the mode differ from each other.
-#But the core point is to see how the price of 40.5-45.5 is the price in which the greatest number of firms
-#see themself. 
+#But the core insight is to see how the price of 40.5-45.5 is the price 
+#in which the biggest 'cloud' of products stays. 
+
 
 data_mid <- data
 
@@ -156,9 +164,8 @@ ggplot(data_mid) + geom_point(aes(x= price_mean, y= country), col = 'blue') + sc
 
 ##############
 
-##Correlation plot
+##Correlation plot to be able to see the correlations and decide which features can be used to have an enough good model.
 
-#data_clean
 
 data_clean_cor<-data[,-c(1,5)]
 
@@ -170,10 +177,6 @@ corrplot(data_clean_cor, method= c('number'), type="full", order="hclust",
 
 
 
-colnames(data_1)[4]<-'type'
-colnames(data_1)[6]<-'model'
-
-
 data_cor_full<-data_1[,-c(1,3)]
 data_cor_full<-cor(data_cor_full, method = c("pearson"))
 
@@ -182,26 +185,31 @@ corrplot(data_cor_full, method= c('number'), type="full", order="hclust",
 
 
 
-
+data_log_cor<-cor(data_log, method = c("pearson"))
 corrplot(data_log_cor, method= c('pie'), type="full", order="hclust",
          col = brewer.pal(n=4, name="RdYlBu"), tl.srt = 90, tl.col = 'black', tl.pos = 'd')
 
 
-##This takes too long and it's more complicated
+
+
+
+#This takes too long and it's more complicated
 #install.packages("PerformanceAnalytics")
 #library("PerformanceAnalytics")
 
-#chart.Correlation(data_corPer, histogram=TRUE, pch=19)
+#chart.Correlation(data_[whatever you want], histogram=TRUE, pch=19)
 
 #################
-##polynomial regression
+##Polynomial regression:
 
-# Split the data into training and test set
+# See graphically the (data_log$type, data_log$price), with a linear regression.
 
 ggplot(data_log, aes(x=type, y= price, col= price)) + geom_point() + 
   scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
     min(data_log$price), max(data_log$price),10)) + 
   xlab('Type of Product') + ylab('Prices') + stat_smooth(method = lm , formula = y ~ x, col='red', size=1.5)
+
+#Split the data
 
 set.seed(123)
 training.samples <- data_log$price %>%
@@ -210,12 +218,16 @@ train.data  <- data_log[training.samples, ]
 test.data <- data_log[-training.samples, ]
 
 
+#See graphically the train.data with a linear regression.
+
 ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() + 
   scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
     min(data_log$price), max(data_log$price),10)) + 
   xlab('Type of Product ~ Train Dataset') + ylab('Prices') + stat_smooth(method = 'auto', formula = y ~ x, col='red', size=1.5)
 
 
+
+#Check the R2 and the RMSE of the previous linear regression of the train.data
 model_linPT <- lm(price ~ type, data = train.data)
 
 predictions <- model_linPT %>% predict(test.data)
@@ -225,10 +237,14 @@ data.frame(
   R2 = R2(predictions, test.data$price)
 )
 
+#R2 = 13.05%
+#RMSE = 11.71
 
 
 
+#Some others regressions with an higer degree
 
+#Polynomial regression with a degree of 2nd order
 
 lm_2<-lm(price ~ poly(type, 2, raw = TRUE), data = train.data)
 summary(lm_2)
@@ -240,17 +256,26 @@ data.frame(
   R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(type, price) ) +
-  geom_point() +
-  stat_smooth(method = 'auto', formula = y ~ poly(x, 2, raw = TRUE))
+#R2 = 16.27%
+#RMSE = 11.49
+
+#Visualize it
+
+ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product ~ Train Dataset ~ Degree = 2') + ylab('Prices') + 
+  stat_smooth(method = 'auto', formula = y ~ poly(x, 2, raw = TRUE), size= 1.5, col='red')
 
 
+#Polynomial regression of degree = 3
 
-lm_model_final<-lm(price ~ poly(type, 10, raw = TRUE), data = train.data)
+lm_model_final<-lm(price ~ poly(type, 3, raw = TRUE), data = train.data)
 summary(lm_model_final)
 
 
-predictions <- lm_model_final %>% predict(test.data)
+predictions <- lm_model_final %>%
+  predict(test.data)
 
 
 data.frame(
@@ -258,37 +283,62 @@ data.frame(
   R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(type, price) ) +
-  geom_point() +
-  stat_smooth(method = 'auto', formula = y ~ poly(x, 10, raw = TRUE))
+#R2 = 20.40%
+#RMSE = 11.21
 
+#Let us visualize it
+
+ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product ~ Train Dataset ~ Degree = 3') + ylab('Prices') + 
+  stat_smooth(method = 'auto', formula = y ~ poly(x, 3, raw = TRUE), size= 1.5, col='red')
+
+
+#Since it is the best model, we now try to see the prediction intervals and then visualize them
 
 pred_model <- predict(lm_model_final, newdata = test.data, interval="prediction") 
 head(pred_model)
 
-##############
-##############
+data_end<-cbind(test.data, pred_model)
 
-#Log transformation
+ggplot(data_end, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product ~ Train Dataset ~ Degree = 3 ~ Prediction Intervals') + ylab('Prices') + 
+  stat_smooth(method = 'auto', formula = y ~ poly(x, 3, raw = TRUE), size= 1.5, col='red') + 
+  geom_line(aes(y = lwr), color = "purple") +
+  geom_line(aes(y = upr), color = "purple")
 
-  # Build the model
-  model <- lm(price ~ log(type), data = train.data)
-# Make predictions
-predictions <- model %>% predict(test.data)
-# Model performance
+#Basically the only insight could be that the type of product number 2, i.e. skirts, is the product with the highest price.
+
+
+#At the end a log transformation
+
+lmlog<-lm(price ~ log(type), data = train.data)
+summary(lmlog)
+
+
+predictions <- lmlog %>%
+  predict(test.data)
+
+
 data.frame(
   RMSE = RMSE(predictions, test.data$price),
   R2 = R2(predictions, test.data$price)
 )
 
-ggplot(train.data, aes(type, price) ) +
-  geom_point() +
-  stat_smooth(method = lm, formula = y ~ log(x))
+#R2 = 9.86%%
+#RMSE = 11.93
+
+#Let us visualize it
+
+ggplot(train.data, aes(x=type, y= price, col= price)) + geom_point() + 
+  scale_color_gradient(low="cyan", high="blue") + scale_y_continuous(breaks = seq(
+    min(data_log$price), max(data_log$price),10)) + 
+  xlab('Type of Product ~ Train Dataset ~ Log') + ylab('Prices') + 
+  stat_smooth(method = 'auto', formula = y ~ log(x), size= 1.5, col='red')
+
 
 ############
-
-
-###########
-#Same research as before, but removing Type of Product = 4, i.e. removing the Sales.
-
 
