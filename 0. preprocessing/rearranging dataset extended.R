@@ -23,7 +23,7 @@ DS_unique$count <- 0
 
 
 for (row in 0:nrow(DS_unique)) {
-  row <- 1
+  
 
   country<- DS_unique$country[row]
   product_model<- DS_unique$product_model[row]

@@ -45,6 +45,13 @@ DS_rearr <- DS_rearr %>% mutate(Label = ifelse(count >= med_3, 1, 0))
 DS_rearr <- DS_rearr %>% select(-count)
 
 
+DS_aggr_ext <- read.csv("../Data/rearranged_extended_DS.csv") # rearranged extended dataset
+
+DS_aggr_ext <- DS_aggr_ext %>% select(-X) 
+med_4 <- median(DS_aggr_ext$count)
+DS_aggr_ext <- DS_aggr_ext %>% mutate(Label = ifelse(count >= med_4, 1, 0))
+DS_aggr_ext <-DS_aggr_ext %>% select(-count)
+
 # for each dataset: fitting the model, predicting & calculating the misclassification
 
 # function to do it quickly
@@ -76,9 +83,10 @@ misclass_calc <- function(type_DS, dataset) {
 
 misclass_calc("original", DS_or)
 misclass_calc("aggregated ", DS_aggr)
-misclass_calc("original", DS_rearr)
+misclass_calc("rearranged", DS_rearr)
+misclass_calc("rearranged extended", DS_aggr_ext)
 
-# N.B. the functions took quite some time to be run, therefore we are exporting the results at the very end
+
 
 # The original and the rearranged dataset lead to very similar results (in terms of misclassificat, FP and TP).
 # Quite interestingly, the aggregated dataset has a high level of FP and a low one of FN.
